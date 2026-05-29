@@ -1,0 +1,60 @@
+Frontend design plan
+
+
+
+The introduction should slide from bottom to top 
+
+Background should be a GIF file with a moving image showcasing the menu
+
+Top nav should be at the top right side of the website (menu, location, contact, order)
+
+JCFoods logo should be at the top left side of the website
+
+Color palettes (#F9C5D1 #FAD2E1 #CDEAC0 #BFD7EA #FFF7E6)
+
+
+
+
+
+Menu
+
+Photos and Description should be styled in zigzag
+
+Image
+
+Description
+
+Description
+
+Image
+
+Image
+
+Description
+
+Desciption
+
+Image
+
+The animation and styles should be smooth
+
+
+
+
+
+
+
+
+
+Backend system
+
+
+
+Should track the most sold menu
+
+Location pinpoint drop point within Kidapawan City
+
+Facebook API for messaging the menu
+
+
+

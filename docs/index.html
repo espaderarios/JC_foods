@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>JCFoods</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    :root{
+      --primary:#ff7b00;
+      --primary-dark:#ff5100;
+      --bg:#0f0f11;
+      --card:#17171b;
+      --text:#ffffff;
+      --muted:#b8b8c2;
+      --border:rgba(255,255,255,0.08);
+    }
+
+    body{
+      font-family:'Poppins',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    /* BACKGROUND */
+    .bg-overlay{
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      background:
+        radial-gradient(circle at top left, rgba(255,123,0,0.18), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(255,81,0,0.16), transparent 35%),
+        linear-gradient(180deg,#0f0f11 0%, #121217 100%);
+    }
+
+    /* HEADER */
+    .site-header{
+      width:100%;
+      position:fixed;
+      top:0;
+      left:0;
+      z-index:1000;
+
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+
+      padding:20px 7%;
+      -webkit-backdrop-filter:blur(14px);
+      backdrop-filter:blur(14px);
+      background:rgba(15,15,17,0.55);
+      border-bottom:1px solid var(--border);
+    }
+
+    .nav-shell{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+
+    .logo{
+      font-size:1.7rem;
+      font-weight:800;
+      letter-spacing:1px;
+      color:var(--primary);
+    }
+
+    .top-nav{
+      display:flex;
+      gap:28px;
+    }
+
+    .nav-toggle{
+      display:none;
+      appearance:none;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.04);
+      color:var(--text);
+      border-radius:14px;
+      width:48px;
+      height:48px;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition:0.25s ease;
+    }
+
+    .nav-toggle:hover{
+      background:rgba(255,255,255,0.08);
+      border-color:rgba(255,123,0,0.35);
+    }
+
+    .nav-toggle span,
+    .nav-toggle span::before,
+    .nav-toggle span::after{
+      content:'';
+      display:block;
+      width:20px;
+      height:2px;
+      border-radius:999px;
+      background:currentColor;
+      position:relative;
+      transition:0.25s ease;
+    }
+
+    .nav-toggle span::before{ position:absolute; top:-6px; left:0; }
+    .nav-toggle span::after{ position:absolute; top:6px; left:0; }
+
+    .site-header.nav-open .nav-toggle span{ background:transparent; }
+    .site-header.nav-open .nav-toggle span::before{ top:0; transform:rotate(45deg); }
+    .site-header.nav-open .nav-toggle span::after{ top:0; transform:rotate(-45deg); }
+
+    .nav-tab{
+      appearance:none;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.04);
+      color:var(--text);
+      text-decoration:none;
+      font:inherit;
+      font-weight:600;
+      padding:12px 18px;
+      border-radius:999px;
+      transition:0.25s ease;
+      cursor:pointer;
+    }
+
+    .nav-tab:hover,
+    .nav-tab.active{
+      background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+      border-color:transparent;
+      transform:translateY(-1px);
+      box-shadow:0 10px 25px rgba(255,123,0,0.22);
+    }
+
+    .tab-panel.is-hidden{
+      display:none !important;
+    }
+
+    .top-nav a{
+      color:var(--text);
+      text-decoration:none;
+      font-weight:500;
+      transition:0.3s ease;
+      position:relative;
+    }
+
+    .top-nav a::after{
+      content:'';
+      position:absolute;
+      left:0;
+      bottom:-6px;
+      width:0%;
+      height:2px;
+      background:var(--primary);
+      transition:0.3s ease;
+    }
+
+    .top-nav a:hover{
+      color:var(--primary);
+    }
+
+    .top-nav a:hover::after{
+      width:100%;
+    }
+
+    /* HERO */
+    .hero-slide{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:120px 7% 80px;
+      position:relative;
+    }
+
+    .hero-content{
+      margin-top: 2rem;
+      max-width:850px;
+      animation:fadeUp 1s ease;
+      position:relative;
+      z-index:2;
+    }
+
+    /* Intro GIF placed behind hero content; put your GIF at docs/assets/intro.gif */
+    .intro-gif{
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100vh;
+      object-fit:cover;
+      opacity:0.3;
+      filter:none;
+      z-index:1;
+      pointer-events:none;
+    }
+
+    .hero-content h1{
+      font-size:clamp(3rem,7vw,6rem);
+      line-height:1;
+      font-weight:800;
+      margin-bottom:24px;
+    }
+
+    .hero-content .lead{
+      font-size:1.15rem;
+      color:var(--muted);
+      line-height:1.8;
+      max-width:650px;
+      margin:auto;
+    }
+
+    .hero-content::before{
+      content:'';
+      position:absolute;
+      width:400px;
+      height:400px;
+      background:rgba(255,123,0,0.08);
+      filter:none;
+      border-radius:50%;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      z-index:-1;
+    }
+
+    /* SECTIONS */
+    section{
+      padding:100px 7%;
+    }
+
+    section h2{
+      font-size:2.3rem;
+      margin-bottom:40px;
+      position:relative;
+      display:inline-block;
+    }
+
+    section h2::after{
+      content:'';
+      position:absolute;
+      left:0;
+      bottom:-10px;
+      width:70%;
+      height:4px;
+      border-radius:20px;
+      background:linear-gradient(
+        to right,
+        var(--primary),
+        var(--primary-dark)
+      );
+    }
+
+    /* MENU */
+    .menu-items{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:28px;
+      margin-top:20px;
+    }
+
+    .menu-section,
+    .pastry-section{
+      position:relative;
+      overflow:hidden;
+      isolation:isolate;
+    }
+
+    .menu-section::before,
+    .pastry-section::before{
+      content:'';
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100vh;
+      background-position:center;
+      background-size:cover;
+      background-repeat:no-repeat;
+      opacity:0.34;
+      z-index:0;
+      pointer-events:none;
+    }
+
+    .menu-section::before{
+      background-image:url('gifs/intro.gif');
+    }
+
+    .pastry-section::before{
+      background-image:url('gifs/pastry.gif');
+    }
+
+    .menu-section > *,
+    .pastry-section > *{
+      position:relative;
+      z-index:1;
+    }
+
+    .menu-card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:28px;
+      overflow:hidden;
+      transition:0.35s ease;
+      position:relative;
+    }
+
+    .menu-card:hover{
+      transform:translateY(-8px);
+      border-color:rgba(255,123,0,0.35);
+      box-shadow:0 20px 50px rgba(0,0,0,0.4);
+    }
+
+    .menu-image{
+      width:100%;
+      height:220px;
+      object-fit:cover;
+    }
+
+    .menu-info{
+      padding:24px;
+    }
+
+    .menu-info h3{
+      font-size:1.3rem;
+      margin-bottom:10px;
+    }
+
+    .menu-info p{
+      color:var(--muted);
+      line-height:1.7;
+      margin-bottom:18px;
+    }
+
+    .menu-actions{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .mini-btn{
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.04);
+      color:var(--text);
+      cursor:pointer;
+      transition:0.25s ease;
+      font-weight:600;
+    }
+
+    .mini-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(255,123,0,0.35);
+      background:rgba(255,123,0,0.12);
+    }
+
+    .price{
+      font-size:1.1rem;
+      font-weight:700;
+      color:var(--primary);
+    }
+
+    /* PASTRY + ORDER */
+    .product-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:28px;
+      margin-top:20px;
+    }
+
+    .product-card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:28px;
+      overflow:hidden;
+      transition:0.35s ease;
+    }
+
+    .product-card:hover{
+      transform:translateY(-6px);
+      border-color:rgba(255,123,0,0.35);
+      box-shadow:0 20px 50px rgba(0,0,0,0.4);
+    }
+
+    .product-card img{
+      width:100%;
+      height:220px;
+      object-fit:cover;
+      display:block;
+    }
+
+    .order-section{
+      display:grid;
+      grid-template-columns:1.1fr 0.9fr;
+      gap:28px;
+      align-items:start;
+    }
+
+    .order-panel,
+    .order-summary{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:28px;
+      padding:24px;
+    }
+
+    .order-summary h3,
+    .order-panel h3{
+      margin-bottom:14px;
+      font-size:1.25rem;
+    }
+
+    .order-list{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      margin-top:18px;
+    }
+
+    .order-item{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:14px 0;
+      border-bottom:1px solid var(--border);
+    }
+
+    .order-item:last-child{
+      border-bottom:none;
+    }
+
+    .order-controls{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .qty-pill{
+      min-width:36px;
+      text-align:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid var(--border);
+    }
+
+    .summary-row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:10px;
+      color:var(--muted);
+    }
+
+    .delivery-field{
+      margin-top:18px;
+    }
+
+    .delivery-field label{
+      display:block;
+      margin-bottom:8px;
+      font-weight:600;
+      color:var(--text);
+    }
+
+    .delivery-input{
+      width:100%;
+      padding:14px 16px;
+      border-radius:16px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.04);
+      color:var(--text);
+      font:inherit;
+      outline:none;
+      transition:0.25s ease;
+    }
+
+    .delivery-input::placeholder{
+      color:var(--muted);
+    }
+
+    .delivery-input:focus{
+      border-color:rgba(255,123,0,0.45);
+      background:rgba(255,255,255,0.06);
+    }
+
+    .locate-row{
+      margin-top:10px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .locate-note{
+      font-size:0.9rem;
+      color:var(--muted);
+    }
+
+    .order-map-wrap{ margin-top:14px; }
+
+    #orderMap{ width:100%; height:200px; border-radius:12px; overflow:hidden; border:1px solid var(--border); background:#101014; }
+
+    .map-fullscreen-btn{
+      position:absolute;
+      right:8px;
+      top:8px;
+      z-index:5;
+      background:rgba(0,0,0,0.45);
+      color:var(--text);
+      border:1px solid var(--border);
+      padding:6px 8px;
+      border-radius:8px;
+      cursor:pointer;
+      -webkit-backdrop-filter:blur(6px);
+      backdrop-filter:blur(6px);
+    }
+
+    .map-card{ position:relative; }
+    .order-map-wrap{ position:relative; }
+
+    .map-fullscreen{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.88);
+      z-index:20000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+
+    .map-fullscreen.hidden{ display:none; }
+
+    .map-fullscreen-inner{
+      width:100%;
+      height:100%;
+      max-width:1400px;
+      max-height:1000px;
+      border-radius:12px;
+      overflow:hidden;
+      position:relative;
+      background:#000;
+    }
+
+    .map-fullscreen .close-btn,
+    .map-fullscreen .exit-btn{
+      position:absolute;
+      top:12px;
+      z-index:99999;
+      background:rgba(0,0,0,0.6);
+      color:#fff;
+      border:1px solid rgba(255,255,255,0.12);
+      padding:8px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      box-shadow:0 6px 18px rgba(0,0,0,0.5);
+    }
+
+    .map-fullscreen .close-btn{ right:12px; }
+    .map-fullscreen .exit-btn{ left:12px; }
+
+    .confirm-actions{ display:flex; gap:10px; }
+    .btn-secondary{ background:transparent; border:1px solid var(--border); color:var(--text); }
+
+    .summary-total{
+      color:var(--text);
+      font-size:1.2rem;
+      font-weight:700;
+      margin-top:18px;
+    }
+
+    .pastry-section{
+      --primary:#F9C5D1;
+      --primary-dark:#FAD2E1;
+      --bg:#FFF7E6;
+      --card:#ffffff;
+      --text:#2b2430;
+      --muted:#6f6672;
+      --border:rgba(43,36,48,0.10);
+      color:var(--text);
+    }
+
+    .pastry-section h2::after{
+      background:linear-gradient(to right,#F9C5D1,#BFD7EA);
+    }
+
+    .pastry-section .product-card,
+    .pastry-section .menu-card{
+      background:rgba(255,255,255,0.86);
+      border-color:rgba(43,36,48,0.08);
+      box-shadow:0 14px 35px rgba(190,140,160,0.10);
+    }
+
+    .pastry-section .mini-btn,
+    .pastry-section .btn{
+      background:linear-gradient(135deg,#F9C5D1,#BFD7EA);
+      color:#2b2430;
+      border-color:transparent;
+      box-shadow:none;
+    }
+
+    .pastry-section .mini-btn:hover,
+    .pastry-section .btn:hover{
+      background:linear-gradient(135deg,#FAD2E1,#CDEAC0);
+      box-shadow:0 10px 25px rgba(249,197,209,0.35);
+    }
+
+    .pastry-section .price{
+      color:#c06b8a;
+    }
+
+    .pastry-section .nav-tab,
+    .pastry-section .nav-toggle{
+      color:#2b2430;
+      border-color:rgba(43,36,48,0.12);
+      background:rgba(255,255,255,0.7);
+    }
+
+    .pastry-section .btn{
+      color:#2b2430;
+    }
+
+    .note{
+      margin-top:12px;
+      color:var(--muted);
+      font-size:0.95rem;
+    }
+
+    /* LOCATION + CONTACT */
+    .location-section,
+    .contact-section{
+      background:rgba(255,255,255,0.02);
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+    }
+
+    #locations{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:24px;
+      margin-top:20px;
+    }
+
+    .map-card{
+      margin-top:28px;
+      background:var(--card);
+      padding:24px;
+      border-radius:24px;
+      border:1px solid var(--border);
+    }
+
+    .map-card h3{
+      margin-bottom:10px;
+    }
+
+    .map-card p{
+      color:var(--muted);
+      line-height:1.7;
+      margin-bottom:16px;
+    }
+
+    #deliveryMap{
+      width:100%;
+      height:min(60vh,520px);
+      min-height:320px;
+      border-radius:20px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      background:#101014;
+    }
+
+    .map-fallback{
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:20px;
+      color:var(--muted);
+      background:rgba(255,255,255,0.03);
+    }
+
+    .location-card{
+      background:var(--card);
+      padding:24px;
+      border-radius:24px;
+      border:1px solid var(--border);
+      transition:0.3s ease;
+    }
+
+    .location-card:hover{
+      transform:translateY(-5px);
+      border-color:rgba(255,123,0,0.3);
+    }
+
+    .contact-section p{
+      max-width:700px;
+      color:var(--muted);
+      line-height:1.8;
+      font-size:1.05rem;
+    }
+
+    /* BUTTON */
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px 24px;
+      border-radius:14px;
+      text-decoration:none;
+      color:#fff;
+      background:linear-gradient(
+        135deg,
+        var(--primary),
+        var(--primary-dark)
+      );
+      font-weight:600;
+      transition:0.3s ease;
+      border:none;
+      cursor:pointer;
+    }
+
+    .btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 10px 30px rgba(255,123,0,0.3);
+    }
+
+    /* ANIMATION */
+    @keyframes fadeUp{
+      from{
+        opacity:0;
+        transform:translateY(40px);
+      }
+      to{
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+
+    /* MOBILE */
+    @media(max-width:768px){
+
+      .site-header{
+        padding:18px 5%;
+      }
+
+      .nav-shell{
+        width:100%;
+        justify-content:flex-end;
+      }
+
+      .nav-toggle{
+        display:inline-flex;
+      }
+
+      .top-nav{
+        display:none;
+        position:absolute;
+        top:100%;
+        left:5%;
+        right:5%;
+        flex-direction:column;
+        gap:12px;
+        padding:14px;
+        margin-top:10px;
+        background:rgba(15,15,17,0.92);
+        border:1px solid var(--border);
+        border-radius:20px;
+        box-shadow:0 18px 40px rgba(0,0,0,0.35);
+      }
+
+      .site-header.nav-open .top-nav{
+        display:flex;
+      }
+
+      .top-nav a{
+        font-size:0.92rem;
+      }
+
+      .nav-tab{
+        padding:10px 14px;
+      }
+
+      .hero-slide{
+        padding-inline:5%;
+      }
+
+      section{
+        padding:80px 5%;
+      }
+
+      .hero-content h1{
+        font-size:3rem;
+      }
+
+      section h2{
+        font-size:1.8rem;
+      }
+
+      .order-section{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media(max-width:560px){
+
+      .site-header{
+        flex-direction:row;
+        gap:12px;
+      }
+
+      .nav-shell{
+        width:100%;
+      }
+
+      .nav-tab{
+        width:100%;
+      }
+
+      .hero-content .lead{
+        font-size:1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-overlay"></div>
+
+  <header class="site-header">
+    <div class="logo">JCFoods</div>
+
+    <div class="nav-shell">
+      <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+      </button>
+
+      <nav class="top-nav">
+        <button class="nav-tab" type="button" data-target="menu">Menu</button>
+        <button class="nav-tab" type="button" data-target="pastry">Pastry</button>
+        <button class="nav-tab" type="button" data-target="location">Location</button>
+        <button class="nav-tab" type="button" data-target="contact">Contact</button>
+        <button class="nav-tab" type="button" data-target="order">Order</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app">
+
+    <!-- HERO -->
+    <section id="hero" class="hero-slide tab-panel is-hidden">
+
+      <img class="intro-gif" src="gifs/intro.gif" alt="Intro animation">
+
+      <div class="hero-content">
+        <h1>
+          Delicious Food
+          <br>
+          Delivered Fast
+        </h1>
+
+        <p class="lead">
+          Experience authentic local flavors made with fresh ingredients,
+          premium quality, and fast delivery right to your doorstep.
+        </p>
+
+        <br><br>
+
+        <button class="btn" type="button" id="exploreMenuBtn">
+          Explore Menu
+        </button>
+      </div>
+
+    </section>
+
+    <!-- CONFIRM -->
+    <section id="confirm" class="tab-panel is-hidden">
+
+      <div class="order-panel">
+        <h2>Confirm Order</h2>
+        <p class="note">Please review your items and delivery point before confirming.</p>
+        <div id="confirmList" class="order-list"></div>
+      </div>
+
+      <aside class="order-summary">
+        <h3>Review</h3>
+        <div class="summary-row"><span>Items</span><span id="confirmItems">0</span></div>
+        <div class="summary-row"><span>Subtotal</span><span id="confirmSubtotal">₱0</span></div>
+        <div class="summary-row"><span>Delivery</span><span id="confirmDeliveryFee">₱30</span></div>
+        <div class="summary-row"><span>Delivery point</span><span id="confirmDeliveryPoint">Not set</span></div>
+        <div class="summary-total">Total: <span id="confirmTotal">₱0</span></div>
+
+        <br>
+        <div class="confirm-actions">
+          <button id="confirmSubmit" class="btn">Confirm Order</button>
+          <button id="confirmCancel" class="btn btn-secondary">Edit Order</button>
+        </div>
+        <p class="note" id="confirmStatus"></p>
+      </aside>
+
+    </section>
+
+    <!-- MENU -->
+    <section id="menu" class="menu-section tab-panel">
+      <h2>Our Menu</h2>
+
+      <div class="menu-items">
+
+        <div class="menu-card">
+          <img
+            class="menu-image"
+            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop"
+            alt="Chicken Inasal"
+          />
+          <div class="menu-info">
+            <h3>Chicken Inasal</h3>
+
+            <p>
+              Grilled marinated chicken served with rice and signature sauce.
+            </p>
+
+            <div class="menu-actions">
+              <div class="price">₱199</div>
+              <button class="mini-btn" type="button" data-add="inasal" data-name="Chicken Inasal" data-price="199">Add to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card">
+          <img
+            class="menu-image"
+            src="https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?q=80&w=1200&auto=format&fit=crop"
+            alt="Burger Deluxe"
+          />
+          <div class="menu-info">
+            <h3>Burger Deluxe</h3>
+
+            <p>
+              Juicy beef burger with fresh vegetables and melted cheese.
+            </p>
+
+            <div class="menu-actions">
+              <div class="price">₱149</div>
+              <button class="mini-btn" type="button" data-add="burger" data-name="Burger Deluxe" data-price="149">Add to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card">
+          <img
+            class="menu-image"
+            src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=1200&auto=format&fit=crop"
+            alt="Cheese Pizza"
+          />
+          <div class="menu-info">
+            <h3>Cheese Pizza</h3>
+
+            <p>
+              Crispy handmade pizza topped with premium mozzarella cheese.
+            </p>
+
+            <div class="menu-actions">
+              <div class="price">₱299</div>
+              <button class="mini-btn" type="button" data-add="pizza" data-name="Cheese Pizza" data-price="299">Add to Order</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- PASTRY -->
+    <section id="pastry" class="pastry-section tab-panel is-hidden">
+      <h2>Pastries</h2>
+
+      <div class="product-grid">
+
+        <div class="product-card">
+          <img class="menu-image" src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=1200&auto=format&fit=crop" alt="Butter Croissant" />
+          <div class="menu-info">
+            <h3>Butter Croissant</h3>
+            <p>Flaky, buttery, and baked fresh every morning.</p>
+            <div class="menu-actions">
+              <div class="price">₱89</div>
+              <button class="mini-btn" type="button" data-add="croissant" data-name="Butter Croissant" data-price="89">Add to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img class="menu-image" src="https://images.unsplash.com/photo-1560185007-cde436f6a4d0?q=80&w=1200&auto=format&fit=crop" alt="Sweet Buns" />
+          <div class="menu-info">
+            <h3>Sweet Buns</h3>
+            <p>Soft pastry buns with a light sugar glaze.</p>
+            <div class="menu-actions">
+              <div class="price">₱69</div>
+              <button class="mini-btn" type="button" data-add="sweet-buns" data-name="Sweet Buns" data-price="69">Add to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <img class="menu-image" src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?q=80&w=1200&auto=format&fit=crop" alt="Chocolate Slice" />
+          <div class="menu-info">
+            <h3>Chocolate Slice</h3>
+            <p>Rich chocolate cake topped with silky frosting.</p>
+            <div class="menu-actions">
+              <div class="price">₱99</div>
+              <button class="mini-btn" type="button" data-add="choco-slice" data-name="Chocolate Slice" data-price="99">Add to Order</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ORDER -->
+    <section id="order" class="order-section tab-panel is-hidden">
+
+      <div class="order-panel">
+        <h2>Ordering System</h2>
+        <h3>Select items from Menu or Pastry</h3>
+        <p class="note">Use the Add to Order buttons to build your cart. Quantities can be changed before checkout.</p>
+
+        <div id="orderList" class="order-list"></div>
+      </div>
+
+      <aside class="order-summary">
+        <h3>Summary</h3>
+
+        <div class="summary-row"><span>Items</span><span id="summaryItems">0</span></div>
+        <div class="summary-row"><span>Subtotal</span><span id="summarySubtotal">₱0</span></div>
+        <div class="summary-row"><span>Delivery</span><span id="summaryDelivery">₱30</span></div>
+
+        <div class="delivery-field">
+          <label for="deliveryPoint">Delivery point</label>
+          <input id="deliveryPoint" class="delivery-input" type="text" placeholder="House no., street, barangay, or landmark" autocomplete="street-address" />
+          <div class="locate-row">
+            <button id="locateBtn" class="mini-btn" type="button">Use my location</button>
+            <div class="locate-note">or tap the map to pin your drop point.</div>
+          </div>
+        </div>
+
+        <div class="summary-row"><span>Set location</span><span id="summaryDeliveryPoint">Not set</span></div>
+
+        <div class="order-map-wrap">
+          <button class="map-fullscreen-btn" data-map="orderMap" aria-label="Open map fullscreen">⤢</button>
+          <div id="orderMap"></div>
+        </div>
+
+        <div class="summary-total">Total: <span id="summaryTotal">₱30</span></div>
+
+        <br>
+        <button class="btn" type="button" id="checkoutBtn">Checkout Order</button>
+        <p class="note" id="orderStatus">Your cart is empty.</p>
+      </aside>
+
+    </section>
+
+    <!-- LOCATION -->
+    <section id="location" class="location-section tab-panel is-hidden">
+
+      <h2>Delivery Locations</h2>
+
+      <div id="locations">
+
+        <div class="location-card">
+          <h3>Kidapawan City</h3>
+          <p>Fast same-day delivery available.</p>
+        </div>
+
+        <div class="location-card">
+          <h3>Kabacan</h3>
+          <p>Available for scheduled delivery orders.</p>
+        </div>
+
+        <div class="location-card">
+          <h3>Matalam</h3>
+          <p>Delivery available every day.</p>
+        </div>
+
+      </div>
+
+      <div class="map-card">
+        <h3>Delivery Map</h3>
+        <p>This map uses your downloaded OSM file to outline the delivery area and center the location view.</p>
+        <button class="map-fullscreen-btn" data-map="deliveryMap" aria-label="Open map fullscreen">⤢</button>
+        <div id="deliveryMap" aria-label="Delivery map"></div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="contact-section tab-panel is-hidden">
+
+      <h2>Contact</h2>
+
+      <p>
+        Have questions or custom orders? Reach out through our Facebook page
+        or contact support for quick assistance and delivery updates.
+      </p>
+
+      <br><br>
+
+      <button class="btn" type="button" onclick="window.open('https://www.facebook.com/rosario.espadera.1/', '_blank')">
+        Contact Us
+      </button>
+
+    </section>
+
+  </main>
+
+  <div id="mapFullscreen" class="map-fullscreen hidden" aria-hidden="true">
+    <div class="map-fullscreen-inner" id="mapFullscreenInner">
+      <button class="close-btn" id="mapFullscreenClose" aria-label="Close fullscreen map">✕</button>
+    </div>
+  </div>
+
+  <script>
+    const leafletScript = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    const order = new Map();
+    const deliveryFee = 30;
+    const osmMapUrl = './assets/map.osm';
+
+    const money = (value) => `₱${Number(value).toLocaleString('en-PH')}`;
+
+    const panels = Array.from(document.querySelectorAll('.tab-panel'));
+    const buttons = Array.from(document.querySelectorAll('.nav-tab'));
+    const header = document.querySelector('.site-header');
+    const navToggle = document.querySelector('.nav-toggle');
+    const deliveryPointInput = document.getElementById('deliveryPoint');
+    let deliveryMapInstance = null;
+    let deliveryMapPromise = null;
+    let orderMapInstance = null;
+    let orderMapPromise = null;
+
+    const loadLeaflet = () => new Promise((resolve, reject) => {
+      if (window.L) {
+        resolve();
+        return;
+      }
+
+      const existing = document.querySelector(`script[src="${leafletScript}"]`);
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Leaflet failed to load')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = leafletScript;
+      script.defer = true;
+      script.addEventListener('load', () => resolve(), { once: true });
+      script.addEventListener('error', () => reject(new Error('Leaflet failed to load')), { once: true });
+      document.head.appendChild(script);
+    });
+
+    const ensureDeliveryMap = () => {
+      if (deliveryMapPromise) return deliveryMapPromise;
+
+      deliveryMapPromise = (async () => {
+        const mapElement = document.getElementById('deliveryMap');
+        if (!mapElement) return null;
+
+        await loadLeaflet();
+
+        const response = await fetch(osmMapUrl);
+        const xmlText = await response.text();
+        const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
+        const boundsNode = xml.querySelector('bounds');
+        const minLat = Number(boundsNode?.getAttribute('minlat'));
+        const minLon = Number(boundsNode?.getAttribute('minlon'));
+        const maxLat = Number(boundsNode?.getAttribute('maxlat'));
+        const maxLon = Number(boundsNode?.getAttribute('maxlon'));
+
+        if (![minLat, minLon, maxLat, maxLon].every(Number.isFinite)) {
+          throw new Error('OSM bounds missing');
+        }
+
+        const southWest = [minLat, minLon];
+        const northEast = [maxLat, maxLon];
+        const center = [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+
+        deliveryMapInstance = L.map(mapElement, { scrollWheelZoom: false });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors',
+          maxZoom: 19,
+        }).addTo(deliveryMapInstance);
+
+        L.rectangle([southWest, northEast], {
+          color: '#ff7b00',
+          weight: 2,
+          fillColor: '#ff7b00',
+          fillOpacity: 0.08,
+        }).addTo(deliveryMapInstance);
+
+        // JC Foods store marker (provided coordinates)
+        L.marker([7.057614, 124.982822]).addTo(deliveryMapInstance).bindPopup('JC Foods (store)').openPopup();
+        deliveryMapInstance.fitBounds([southWest, northEast], { padding: [18, 18] });
+        deliveryMapInstance.invalidateSize();
+        return deliveryMapInstance;
+      })().catch((error) => {
+        const mapElement = document.getElementById('deliveryMap');
+        if (mapElement) {
+          mapElement.innerHTML = `<div class="map-fallback">Unable to load the map from the OSM file.<br>${error.message}</div>`;
+        }
+        return null;
+      });
+
+      return deliveryMapPromise;
+    };
+
+    const ensureOrderMap = () => {
+      if (orderMapPromise) return orderMapPromise;
+
+      orderMapPromise = (async () => {
+        const mapElement = document.getElementById('orderMap');
+        if (!mapElement) return null;
+
+        await loadLeaflet();
+
+        const response = await fetch(osmMapUrl);
+        const xmlText = await response.text();
+        const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
+        const boundsNode = xml.querySelector('bounds');
+        const minLat = Number(boundsNode?.getAttribute('minlat'));
+        const minLon = Number(boundsNode?.getAttribute('minlon'));
+        const maxLat = Number(boundsNode?.getAttribute('maxlat'));
+        const maxLon = Number(boundsNode?.getAttribute('maxlon'));
+
+        const southWest = [minLat, minLon];
+        const northEast = [maxLat, maxLon];
+        const center = [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+
+        orderMapInstance = L.map(mapElement, { scrollWheelZoom: false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors',
+          maxZoom: 19,
+        }).addTo(orderMapInstance);
+
+        L.rectangle([southWest, northEast], {
+          color: '#ff7b00',
+          weight: 2,
+          fillColor: '#ff7b00',
+          fillOpacity: 0.06,
+        }).addTo(orderMapInstance);
+
+        orderMapInstance.fitBounds([southWest, northEast], { padding: [8, 8] });
+
+        // JC Foods store marker
+        const jcMarker = L.marker([7.057614, 124.982822]).addTo(orderMapInstance).bindPopup('JC Foods (store)');
+
+        let pin = null;
+
+        const setPinAt = async (latlng, reverse = true) => {
+          if (pin) orderMapInstance.removeLayer(pin);
+          pin = L.marker(latlng).addTo(orderMapInstance).bindPopup('Delivery drop point').openPopup();
+          orderMapInstance.setView(latlng, Math.max(orderMapInstance.getZoom(), 15));
+          const [lat, lon] = [latlng.lat || latlng[0], latlng.lng || latlng[1]];
+          // Try reverse geocoding for a human address, fall back to lat/lon
+          if (reverse) {
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+              if (res.ok) {
+                const data = await res.json();
+                const name = data.display_name;
+                deliveryPointInput.value = name || `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                renderOrder();
+                return;
+              }
+            } catch (e) {
+              // ignore reverse geocode errors
+            }
+          }
+          deliveryPointInput.value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+          renderOrder();
+        };
+
+        orderMapInstance.on('click', (ev) => {
+          setPinAt(ev.latlng, true);
+        });
+
+        // Locate button
+        const locateBtn = document.getElementById('locateBtn');
+        if (locateBtn) {
+          locateBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+              alert('Geolocation is not available in your browser.');
+              return;
+            }
+            locateBtn.disabled = true;
+            locateBtn.textContent = 'Locating…';
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+              const lat = pos.coords.latitude;
+              const lon = pos.coords.longitude;
+              await setPinAt({ lat, lng: lon }, true);
+              locateBtn.disabled = false;
+              locateBtn.textContent = 'Use my location';
+            }, (err) => {
+              alert('Unable to get location: ' + err.message);
+              locateBtn.disabled = false;
+              locateBtn.textContent = 'Use my location';
+            }, { enableHighAccuracy: true, timeout: 10000 });
+          });
+        }
+
+        return orderMapInstance;
+      })().catch((error) => {
+        const mapElement = document.getElementById('orderMap');
+        if (mapElement) {
+          mapElement.innerHTML = `<div class="map-fallback">Unable to load the map.<br>${error.message}</div>`;
+        }
+        return null;
+      });
+      return orderMapPromise;
+    };
+
+    const showPanel = (id) => {
+      panels.forEach((panel) => {
+        panel.classList.toggle('is-hidden', panel.id !== id);
+      });
+      buttons.forEach((button) => button.classList.toggle('active', button.dataset.target === id));
+      header.classList.remove('nav-open');
+      navToggle.setAttribute('aria-expanded', 'false');
+
+      if (id === 'location') {
+        ensureDeliveryMap().then(() => {
+          if (deliveryMapInstance) {
+            requestAnimationFrame(() => deliveryMapInstance.invalidateSize());
+          }
+        });
+      }
+      if (id === 'order') {
+        ensureOrderMap().then(() => {
+          if (orderMapInstance) requestAnimationFrame(() => orderMapInstance.invalidateSize());
+        });
+      }
+    };
+
+    navToggle.addEventListener('click', () => {
+      const isOpen = header.classList.toggle('nav-open');
+      navToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.getElementById('exploreMenuBtn').addEventListener('click', () => showPanel('menu'));
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => showPanel(button.dataset.target));
+    });
+
+    showPanel('hero');
+
+    const renderOrder = () => {
+      const list = document.getElementById('orderList');
+      const items = Array.from(order.values());
+      const summaryItems = document.getElementById('summaryItems');
+      const summarySubtotal = document.getElementById('summarySubtotal');
+      const summaryTotal = document.getElementById('summaryTotal');
+      const orderStatus = document.getElementById('orderStatus');
+      const summaryDeliveryPoint = document.getElementById('summaryDeliveryPoint');
+      const deliveryPoint = deliveryPointInput.value.trim();
+
+      if (!items.length) {
+        list.innerHTML = '<div class="note">No items yet. Add something from Menu or Pastry.</div>';
+        summaryItems.textContent = '0';
+        summarySubtotal.textContent = money(0);
+        summaryTotal.textContent = money(deliveryFee);
+        summaryDeliveryPoint.textContent = deliveryPoint || 'Not set';
+        orderStatus.textContent = 'Your cart is empty.';
+        return;
+      }
+
+      const subtotal = items.reduce((total, item) => total + item.price * item.qty, 0);
+      const count = items.reduce((total, item) => total + item.qty, 0);
+
+      list.innerHTML = items.map((item) => `
+        <div class="order-item" data-id="${item.id}">
+          <div>
+            <strong>${item.name}</strong>
+            <div class="note">${money(item.price)} each</div>
+          </div>
+          <div class="order-controls">
+            <button class="mini-btn" type="button" data-action="decrease" data-id="${item.id}">-</button>
+            <span class="qty-pill">${item.qty}</span>
+            <button class="mini-btn" type="button" data-action="increase" data-id="${item.id}">+</button>
+            <button class="mini-btn" type="button" data-action="remove" data-id="${item.id}">Remove</button>
+          </div>
+        </div>
+      `).join('');
+
+      summaryItems.textContent = String(count);
+      summarySubtotal.textContent = money(subtotal);
+      summaryTotal.textContent = money(subtotal + deliveryFee);
+      summaryDeliveryPoint.textContent = deliveryPoint || 'Not set';
+      orderStatus.textContent = deliveryPoint
+        ? `Ready to checkout ${count} item${count > 1 ? 's' : ''} for delivery to ${deliveryPoint}.`
+        : `Ready to checkout ${count} item${count > 1 ? 's' : ''}. Set your delivery point before checkout.`;
+    };
+
+    const addItem = (item) => {
+      const existing = order.get(item.id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        order.set(item.id, { ...item, qty: 1 });
+      }
+      renderOrder();
+    };
+
+    document.body.addEventListener('click', (event) => {
+      const addButton = event.target.closest('[data-add]');
+      if (addButton) {
+        addItem({
+          id: addButton.dataset.add,
+          name: addButton.dataset.name,
+          price: Number(addButton.dataset.price),
+        });
+        showPanel('order');
+        return;
+      }
+
+      const actionButton = event.target.closest('[data-action]');
+      if (!actionButton) return;
+
+      const item = order.get(actionButton.dataset.id);
+      if (!item) return;
+
+      if (actionButton.dataset.action === 'increase') item.qty += 1;
+      if (actionButton.dataset.action === 'decrease') item.qty -= 1;
+      if (actionButton.dataset.action === 'remove') item.qty = 0;
+
+      if (item.qty <= 0) order.delete(item.id);
+      renderOrder();
+    });
+
+    deliveryPointInput.addEventListener('input', renderOrder);
+
+    // Show confirmation panel instead of immediately sending
+    document.getElementById('checkoutBtn').addEventListener('click', async () => {
+      const items = Array.from(order.values());
+      const orderStatus = document.getElementById('orderStatus');
+      const deliveryPoint = deliveryPointInput.value.trim();
+
+      if (!items.length) {
+        orderStatus.textContent = 'Add items before checking out.';
+        return;
+      }
+
+      if (!deliveryPoint) {
+        orderStatus.textContent = 'Enter your delivery point before checking out.';
+        // avoid focusing input to prevent viewport jump on mobile
+        return;
+      }
+
+      populateConfirmPanel();
+      showPanel('confirm');
+    });
+
+    // Populate confirm panel with current order details
+    function populateConfirmPanel() {
+      const items = Array.from(order.values());
+      const list = document.getElementById('confirmList');
+      const confirmItems = document.getElementById('confirmItems');
+      const confirmSubtotal = document.getElementById('confirmSubtotal');
+      const confirmTotal = document.getElementById('confirmTotal');
+      const confirmDeliveryPoint = document.getElementById('confirmDeliveryPoint');
+
+      if (!items.length) {
+        list.innerHTML = '<div class="note">No items in cart.</div>';
+        confirmItems.textContent = '0';
+        confirmSubtotal.textContent = money(0);
+        confirmTotal.textContent = money(deliveryFee);
+        confirmDeliveryPoint.textContent = deliveryPointInput.value.trim() || 'Not set';
+        return;
+      }
+
+      const subtotal = items.reduce((total, item) => total + item.price * item.qty, 0);
+      list.innerHTML = items.map((item) => `
+        <div class="order-item">
+          <div>
+            <strong>${item.name}</strong>
+            <div class="note">${money(item.price)} each</div>
+          </div>
+          <div class="order-controls">
+            <span class="qty-pill">${item.qty}</span>
+          </div>
+        </div>
+      `).join('');
+
+      const count = items.reduce((t, it) => t + it.qty, 0);
+      confirmItems.textContent = String(count);
+      confirmSubtotal.textContent = money(subtotal);
+      confirmTotal.textContent = money(subtotal + deliveryFee);
+      confirmDeliveryPoint.textContent = deliveryPointInput.value.trim() || 'Not set';
+      document.getElementById('confirmStatus').textContent = '';
+    }
+
+    // Confirm / Cancel handlers
+    document.addEventListener('click', async (ev) => {
+      const confirmBtn = ev.target.closest('#confirmSubmit');
+      const cancelBtn = ev.target.closest('#confirmCancel');
+      if (cancelBtn) {
+        showPanel('order');
+        return;
+      }
+
+      if (!confirmBtn) return;
+
+      const items = Array.from(order.values());
+      const confirmStatus = document.getElementById('confirmStatus');
+      const deliveryPoint = deliveryPointInput.value.trim();
+
+      if (!items.length) {
+        confirmStatus.textContent = 'No items to confirm.';
+        return;
+      }
+
+      if (!deliveryPoint) {
+        confirmStatus.textContent = 'Delivery point missing.';
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Sending…';
+
+      try {
+        for (const item of items) {
+          await fetch('/api/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemId: item.id, qty: item.qty, deliveryPoint }),
+          });
+        }
+        order.clear();
+        renderOrder();
+        confirmStatus.textContent = `Order sent successfully for ${deliveryPoint}.`;
+        setTimeout(() => showPanel('order'), 1200);
+      } catch (err) {
+        confirmStatus.textContent = 'Failed to send order. Try again.';
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm Order';
+      }
+    });
+
+    // Fullscreen map handlers
+    const mapFsState = { currentId: null, placeholder: null };
+
+    const openMapFullscreen = (sourceId) => {
+      if (mapFsState.currentId) return;
+      const overlay = document.getElementById('mapFullscreen');
+      const inner = document.getElementById('mapFullscreenInner');
+      const source = document.getElementById(sourceId);
+      if (!overlay || !inner || !source) return;
+
+      const placeholder = document.createElement('div');
+      placeholder.className = 'map-placeholder';
+      placeholder.style.width = source.offsetWidth + 'px';
+      placeholder.style.height = source.offsetHeight + 'px';
+      source.parentNode.replaceChild(placeholder, source);
+      mapFsState.placeholder = placeholder;
+      inner.appendChild(source);
+      overlay.classList.remove('hidden');
+      overlay.setAttribute('aria-hidden', 'false');
+      mapFsState.currentId = sourceId;
+
+      setTimeout(() => {
+        try {
+          if (sourceId === 'deliveryMap' && deliveryMapInstance) deliveryMapInstance.invalidateSize();
+          if (sourceId === 'orderMap' && orderMapInstance) orderMapInstance.invalidateSize();
+        } catch (e) {}
+      }, 200);
+    };
+
+    const closeMapFullscreen = () => {
+      if (!mapFsState.currentId) return;
+      const overlay = document.getElementById('mapFullscreen');
+      const inner = document.getElementById('mapFullscreenInner');
+      const source = document.getElementById(mapFsState.currentId);
+      if (!overlay || !inner || !source || !mapFsState.placeholder) return;
+
+      mapFsState.placeholder.parentNode.replaceChild(source, mapFsState.placeholder);
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+
+      try {
+        if (mapFsState.currentId === 'deliveryMap' && deliveryMapInstance) deliveryMapInstance.invalidateSize();
+        if (mapFsState.currentId === 'orderMap' && orderMapInstance) orderMapInstance.invalidateSize();
+      } catch (e) {}
+
+      mapFsState.currentId = null;
+      mapFsState.placeholder = null;
+    };
+
+    // Wire fullscreen buttons
+    document.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('.map-fullscreen-btn');
+      if (btn) {
+        openMapFullscreen(btn.dataset.map);
+      }
+      const close = ev.target.closest('#mapFullscreenClose, #mapFullscreenExit');
+      if (close) closeMapFullscreen();
+    });
+
+    // Close on ESC
+    window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') closeMapFullscreen(); });
+
+    renderOrder();
+  </script>
+
+</body>
+</html>
